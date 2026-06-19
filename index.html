@@ -3,21 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNO P2P Multiplayer</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+    <title>UNO P2P Game</title>
+    <style>
+        /* CSS - एक दम प्रोफेशनल और डार्क थीम */
+        body { margin: 0; background: #0f172a; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .app { width: 100%; height: 100%; display: flex; flex-direction: column; }
+        .table { flex: 2; display: flex; justify-content: center; align-items: center; background: radial-gradient(#15803d, #064e3b); border-radius: 0 0 50px 50px; }
+        .hand-area { height: 150px; background: #1e293b; display: flex; justify-content: center; align-items: center; padding: 10px; overflow-x: auto; }
+        
+        .card { width: 70px; height: 100px; border-radius: 10px; border: 3px solid white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; cursor: pointer; transition: 0.3s; margin-left: -15px; background: white; }
+        .red { background: #ef4444; color: white; }
+        .blue { background: #3b82f6; color: white; }
+        .green { background: #22c55e; color: white; }
+        .yellow { background: #eab308; color: black; }
+        
+        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #0f172a; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; z-index: 999; }
+        input { padding: 15px; border-radius: 10px; border: none; width: 80%; }
+        button { padding: 15px 30px; border-radius: 10px; border: none; background: #facc15; font-weight: bold; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <div class="app">
-        <header><h1>UNO P2P</h1><div id="status">Ready</div></header>
-        <main>
-            <section class="table"><div class="center"><div id="deck" class="card back">UNO</div><div id="discard"></div></div></section>
-            <section class="hand-area"><div id="hand" class="hand"></div></section>
-            <section class="chat-area"><div id="chatBox"></div><div class="chat-input"><input id="chatInput" placeholder="Message..."><button id="sendChat">Send</button></div></section>
-        </main>
-        <div id="login-overlay"><button id="createBtn">Create Room</button><input id="roomInput" placeholder="Room ID"><button id="joinBtn">Join Room</button></div>
+
+<div id="overlay">
+    <h2>UNO P2P</h2>
+    <input id="roomInput" placeholder="Enter Room ID">
+    <button onclick="createRoom()">Create Room</button>
+    <button onclick="joinRoom()">Join Room</button>
+</div>
+
+<div class="app">
+    <div class="table">
+        <div id="discard" style="width:70px; height:100px; border:2px dashed white; display:flex; align-items:center; justify-content:center;">Pile</div>
     </div>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <script src="script.js"></script>
+    <div class="hand-area" id="hand"></div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+    const peer = new Peer();
+    let conn;
+    
+    // UI Logic
+    function createRoom() {
+        peer.on("open", id => {
+            alert("Room Created! ID: " + id);
+            document.getElementById("overlay").style.display = "none";
+        });
+        peer.on("connection", c => { conn = c; document.getElementById("overlay").style.display = "none"; });
+    }
+
+    function joinRoom() {
+        let id = document.getElementById("roomInput").value;
+        conn = peer.connect(id);
+        conn.on("open", () => { document.getElementById("overlay").style.display = "none"; });
+    }
+
+    // Render Cards
+    const hand = [{c:'red', n:1}, {c:'blue', n:7}, {c:'green', n:5}, {c:'yellow', n:9}];
+    const handUI = document.getElementById("hand");
+    hand.forEach(card => {
+        let div = document.createElement("div");
+        div.className = "card " + card.c;
+        div.innerText = card.n;
+        div.onclick = () => { document.getElementById("discard").innerHTML = `<div class="card ${card.c}">${card.n}</div>`; div.remove(); };
+        handUI.appendChild(div);
+    });
+</script>
 </body>
 </html>
