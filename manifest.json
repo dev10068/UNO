@@ -1,0 +1,9 @@
+{
+  "name": "UNO P2P",
+  "short_name": "UNO",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#052e16",
+  "theme_color": "#111827",
+  "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+}
