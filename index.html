@@ -1,73 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNO P2P Game</title>
-    <style>
-        /* CSS - एक दम प्रोफेशनल और डार्क थीम */
-        body { margin: 0; background: #0f172a; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        .app { width: 100%; height: 100%; display: flex; flex-direction: column; }
-        .table { flex: 2; display: flex; justify-content: center; align-items: center; background: radial-gradient(#15803d, #064e3b); border-radius: 0 0 50px 50px; }
-        .hand-area { height: 150px; background: #1e293b; display: flex; justify-content: center; align-items: center; padding: 10px; overflow-x: auto; }
-        
-        .card { width: 70px; height: 100px; border-radius: 10px; border: 3px solid white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; cursor: pointer; transition: 0.3s; margin-left: -15px; background: white; }
-        .red { background: #ef4444; color: white; }
-        .blue { background: #3b82f6; color: white; }
-        .green { background: #22c55e; color: white; }
-        .yellow { background: #eab308; color: black; }
-        
-        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #0f172a; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; z-index: 999; }
-        input { padding: 15px; border-radius: 10px; border: none; width: 80%; }
-        button { padding: 15px 30px; border-radius: 10px; border: none; background: #facc15; font-weight: bold; cursor: pointer; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="Play Uno offline or with friends online via P2P multiplayer">
+  <title>Uno Game</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='[w3.org](http://www.w3.org/2000/svg)' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎴</text></svg>">
 </head>
 <body>
-
-<div id="overlay">
-    <h2>UNO P2P</h2>
-    <input id="roomInput" placeholder="Enter Room ID">
-    <button onclick="createRoom()">Create Room</button>
-    <button onclick="joinRoom()">Join Room</button>
-</div>
-
-<div class="app">
-    <div class="table">
-        <div id="discard" style="width:70px; height:100px; border:2px dashed white; display:flex; align-items:center; justify-content:center;">Pile</div>
+  <div id="app">
+    <!-- Connection Screen -->
+    <div id="connection-screen" class="screen active">
+      <div class="logo">
+        <h1>UNO</h1>
+        <p>Offline-First P2P Multiplayer</p>
+      </div>
+      <div class="connection-options">
+        <div class="player-name-input">
+          <label for="player-name">Your Name</label>
+          <input type="text" id="player-name" placeholder="Enter your name" maxlength="15">
+        </div>
+        <div class="mode-selector">
+          <button id="btn-offline" class="mode-btn">
+            <span class="icon">🎮</span>
+            <span>Play Offline</span>
+            <small>vs Computer</small>
+          </button>
+          <button id="btn-create-room" class="mode-btn">
+            <span class="icon">➕</span>
+            <span>Create Room</span>
+            <small>Host a game</small>
+          </button>
+          <button id="btn-join-room" class="mode-btn">
+            <span class="icon">🔗</span>
+            <span>Join Room</span>
+            <small>Enter code</small>
+          </button>
+        </div>
+        <div id="room-config" class="hidden">
+          <label for="room-capacity">Max Players</label>
+          <select id="room-capacity">
+            <option value="2">2 Players</option>
+            <option value="4" selected>4 Players</option>
+            <option value="6">6 Players</option>
+          </select>
+          <button id="btn-start-host" class="primary-btn">Create Room</button>
+        </div>
+        <div id="join-config" class="hidden">
+          <label for="room-code">Room Code</label>
+          <input type="text" id="room-code" placeholder="Enter room code" maxlength="10">
+          <button id="btn-connect" class="primary-btn">Join</button>
+        </div>
+      </div>
+      <div id="connection-status" class="status-message"></div>
     </div>
-    <div class="hand-area" id="hand"></div>
-</div>
 
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-<script>
-    const peer = new Peer();
-    let conn;
-    
-    // UI Logic
-    function createRoom() {
-        peer.on("open", id => {
-            alert("Room Created! ID: " + id);
-            document.getElementById("overlay").style.display = "none";
-        });
-        peer.on("connection", c => { conn = c; document.getElementById("overlay").style.display = "none"; });
-    }
+    <!-- Lobby Screen -->
+    <div id="lobby-screen" class="screen">
+      <div class="lobby-header">
+        <h2>Game Lobby</h2>
+        <div class="room-info">
+          <span>Room Code: <strong id="display-room-code"></strong></span>
+          <button id="btn-copy-code" class="icon-btn" title="Copy code">📋</button>
+        </div>
+      </div>
+      <div class="players-list" id="players-list"></div>
+      <button id="btn-start-game" class="primary-btn hidden">Start Game</button>
+      <button id="btn-leave-lobby" class="secondary-btn">Leave</button>
+    </div>
 
-    function joinRoom() {
-        let id = document.getElementById("roomInput").value;
-        conn = peer.connect(id);
-        conn.on("open", () => { document.getElementById("overlay").style.display = "none"; });
-    }
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+      <div class="game-header">
+        <div class="turn-indicator" id="turn-indicator">Your Turn</div>
+        <div class="direction-indicator" id="direction-indicator">→</div>
+        <button id="btn-menu" class="icon-btn">☰</button>
+      </div>
+      
+      <div class="opponents-area" id="opponents-area"></div>
+      
+      <div class="game-table">
+        <div class="deck-area">
+          <div class="card-stack draw-pile" id="draw-pile">
+            <div class="card card-back"></div>
+          </div>
+          <div class="card-stack discard-pile" id="discard-pile"></div>
+        </div>
+        <div id="color-picker" class="color-picker hidden">
+          <button class="color-btn red" data-color="red"></button>
+          <button class="color-btn blue" data-color="blue"></button>
+          <button class="color-btn green" data-color="green"></button>
+          <button class="color-btn yellow" data-color="yellow"></button>
+        </div>
+      </div>
+      
+      <div class="player-hand-area">
+        <div class="hand-controls">
+          <button id="btn-uno" class="uno-btn hidden">UNO!</button>
+          <button id="btn-draw" class="draw-btn">Draw Card</button>
+        </div>
+        <div class="player-hand" id="player-hand"></div>
+      </div>
+      
+      <!-- Chat Box (Online Only) -->
+      <div id="chat-container" class="chat-container hidden">
+        <div class="chat-header">
+          <span>Chat</span>
+          <button id="btn-toggle-chat" class="icon-btn">💬</button>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input">
+          <input type="text" id="chat-input" placeholder="Type a message..." maxlength="200">
+          <button id="btn-send-chat" class="icon-btn">➤</button>
+        </div>
+      </div>
+      <button id="btn-chat-toggle" class="chat-toggle-btn hidden">💬</button>
+    </div>
 
-    // Render Cards
-    const hand = [{c:'red', n:1}, {c:'blue', n:7}, {c:'green', n:5}, {c:'yellow', n:9}];
-    const handUI = document.getElementById("hand");
-    hand.forEach(card => {
-        let div = document.createElement("div");
-        div.className = "card " + card.c;
-        div.innerText = card.n;
-        div.onclick = () => { document.getElementById("discard").innerHTML = `<div class="card ${card.c}">${card.n}</div>`; div.remove(); };
-        handUI.appendChild(div);
-    });
-</script>
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="screen">
+      <div class="gameover-content">
+        <h2 id="winner-text">Player Wins!</h2>
+        <div class="final-scores" id="final-scores"></div>
+        <div class="gameover-actions">
+          <button id="btn-play-again" class="primary-btn">Play Again</button>
+          <button id="btn-main-menu" class="secondary-btn">Main Menu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Menu Modal -->
+    <div id="game-menu" class="modal hidden">
+      <div class="modal-content">
+        <h3>Game Menu</h3>
+        <button id="btn-resume">Resume</button>
+        <button id="btn-quit-game">Quit Game</button>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notifications" class="notifications"></div>
+  </div>
+
+  <script src="[unpkg.com](https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js)"></script>
+  <script src="script.js"></script>
 </body>
 </html>
